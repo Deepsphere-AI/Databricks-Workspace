@@ -26,7 +26,10 @@ join DSAI_Revenue_Management.dsai_dim_currency cur on cur.currency_id=rev.curren
 -- COMMAND ----------
 
 CREATE LIVE TABLE dsai_fact_transaction_revenue_external_table
-AS SELECT * FROM csv.`s3://airline-data-bucket/timeseries-data/FLYDUBAI_DATA_PLAN.csv`
+-- TBLPROPERTIES ("headers" = "true")
+AS SELECT * FROM csv.`/FileStore/tables/FLYDUBAI_DATA_PLAN.csv`
+-- `gs://flydubai-airline-data/timeseries-data/FLYDUBAI_DATA_PLAN.csv`
+-- `s3://airline-data-bucket/timeseries-data/FLYDUBAI_DATA_PLAN.csv`
 
 -- COMMAND ----------
 
@@ -36,13 +39,25 @@ AS SELECT * FROM csv.`s3://airline-data-bucket/timeseries-data/FLYDUBAI_DATA_PLA
 -- COMMAND ----------
 
 create live table dsai_fact_revenue_table as
-select * from dsai_fact_transaction_revenue_external_table
+select 
+-- id, data_category, data_source, year, source, destination, flight, price_type, promocode, customer_type, product_type, source_wind, destination_wind, source_humidity, destination_humidity, date_time, revenue, description
+_c0 as id,_c1 as data_category,_c2 as data_source,
+_c3 as year,_c4 as source,_c5 as destination,_c6 as flight,
+_c7 as price_type,_c8 as promocode,_c9 as customer_type,_c10 as product_type,
+_c11 as source_wind,_c12 as destination_wind,_c13 as source_humidity,_c14 as destination_humidity,
+_c15 as date_time,_c16 as revenue,_c17 as description
+from live.dsai_fact_transaction_revenue_external_table  where _c1 in ('ACTUAL')
 union all
-select * from dsai_fact_transaction_revenue_table;
+select 
+id, data_category, data_source, year, source, destination, flight, price_type, promocode, customer_type, product_type, source_wind, destination_wind, source_humidity, destination_humidity, date_time, revenue, description
+from live.dsai_fact_transaction_revenue_table  where data_category in ('ACTUAL');
 
 -- COMMAND ----------
 
--- MAGIC %python
--- MAGIC import pandas as pd
--- MAGIC data = pd.read_csv('s3://airline-data-bucket/timeseries-data/FLYDUBAI_DATA_PLAN.csv')
--- MAGIC data.head()
+
+
+-- COMMAND ----------
+
+-- # import pandas as pd
+-- # data = pd.read_csv('s3://airline-data-bucket/timeseries-data/FLYDUBAI_DATA_PLAN.csv')
+-- # data.head()

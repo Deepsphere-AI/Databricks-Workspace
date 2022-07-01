@@ -701,7 +701,7 @@ def source_wind_from_api():
 # COMMAND ----------
 
 vAR_revenue_model_obj = KerasModelImplementationRevenue()
-dataframe = spark.sql(" select * from dsai_fact_revenue_table where data_category in ('ACTUAL','PLAN') ").toPandas()
+dataframe = spark.sql(" select * from dsai_fact_revenue_table ").toPandas()
 dataframe.drop_duplicates(keep=False, inplace=True)
 source_wind = source_wind_from_api()
 dataframe = vAR_revenue_model_obj.processing_weather_data(dataframe,source_wind)
@@ -791,3 +791,11 @@ displayHTML("<img src ='/files/delta_lake_medallion_architecture_2.jpg'>")
 # MAGIC * HIVE
 # MAGIC * ZOO KEEPER
 # MAGIC * YARN
+
+# COMMAND ----------
+
+1.delta table in pipeline
+2.Data catalog
+3.https://github.com/Deepsphere-AI/Databricks-Workspace
+4.Live table and delta table difference
+5.Stored procedure
