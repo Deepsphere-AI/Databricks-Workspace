@@ -26,7 +26,7 @@ join DSAI_Revenue_Management.dsai_dim_currency cur on cur.currency_id=rev.curren
 -- COMMAND ----------
 
 CREATE LIVE TABLE dsai_fact_transaction_revenue_external_table
--- TBLPROPERTIES ("headers" = "true")
+TBLPROPERTIES ("headers" = "true")
 AS SELECT * FROM csv.`/FileStore/tables/FLYDUBAI_DATA_PLAN.csv`
 -- `gs://flydubai-airline-data/timeseries-data/FLYDUBAI_DATA_PLAN.csv`
 -- `s3://airline-data-bucket/timeseries-data/FLYDUBAI_DATA_PLAN.csv`

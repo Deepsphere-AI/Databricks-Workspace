@@ -47,7 +47,7 @@
 
 # COMMAND ----------
 
-# MAGIC %sql drop database dsai_revenue_management cascade;
+# MAGIC %sql drop database if exists dsai_revenue_management cascade;
 
 # COMMAND ----------
 
@@ -274,7 +274,7 @@ if __name__=='__main__':
 
 # COMMAND ----------
 
-# MAGIC %sql select * from dsai_fact_transaction_revenue where data_category='ACTUAL'
+# MAGIC %sql select * from DSAI_fact_transaction_revenue where data_category='ACTUAL'
 
 # COMMAND ----------
 
@@ -312,6 +312,10 @@ if __name__=='__main__':
 
 # COMMAND ----------
 
+# MAGIC %fs head dbfs:/user/hive/warehouse/dsai_revenue_management.db/dsai_fact_transaction_revenue/_delta_log/00000000000000000000.json
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ## 5.2 Unified Batch and Streaming Source and Sink
 # MAGIC    &emsp;&emsp;&emsp;In real time, there may be mulitple sources of data to work with any usecase. Here, we already have data from Bigquery and now it's time to extract data from google cloud storage bucket. After this data extraction, we can combine this data into existing one. Then we can perform data cleansing processes.
@@ -345,7 +349,7 @@ if __name__=='__main__':
 
 # COMMAND ----------
 
-# MAGIC %sql select * from dsai_fact_transaction_revenue_table
+# MAGIC %sql select * from dsai_fact_transaction_revenue_table where data_category='ACTUAL'
 
 # COMMAND ----------
 
@@ -510,12 +514,157 @@ sample_df.write.format("delta").option("mergeSchema", "true").mode("append").sav
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC # 6. NextGen Financial Planning - Model Implementation
+# MAGIC ## 5.9 Other Databricks Functionalities
 
 # COMMAND ----------
 
-# 1.Remove duplicate rows
-# 2.Handle null values
+# MAGIC %md
+# MAGIC ### 5.9.1 VACCUM
+# MAGIC Recursively vacuum directories associated with the Delta table. VACUUM removes all files from the table directory that are not managed by Delta, as well as data files that are no longer in the latest state of the transaction log for the table and are older than a retention threshold. VACUUM will skip all directories that begin with an _, which includes the _delta_log (partitioning your table on a column that begins with an _ is an exception to this rule; VACUUM scans all valid partitions included in the target Delta table). Delta table data files are deleted according to the time they have been logically removed from Delta’s transaction log + retention hours, not their modification timestamps on the storage system. The default threshold is 7 days.
+
+# COMMAND ----------
+
+# MAGIC %sql describe history dsai_fact_transaction_revenue_external_table
+
+# COMMAND ----------
+
+# MAGIC %sql VACUUM dsai_fact_transaction_revenue_external_table retain 12 hours
+
+# COMMAND ----------
+
+# MAGIC %sql describe history dsai_fact_transaction_revenue_external_table
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### 5.9.2 RESTORE
+# MAGIC 
+# MAGIC You can restore a Delta table to its earlier state by using the RESTORE command. A Delta table internally maintains historic versions of the table that enable it to be restored to an earlier state. A version corresponding to the earlier state or a timestamp of when the earlier state was created are supported as options by the RESTORE command.
+
+# COMMAND ----------
+
+# MAGIC %sql RESTORE table dsai_fact_transaction_revenue_external_table to version as of 0
+
+# COMMAND ----------
+
+# MAGIC %sql select count(*) from dsai_fact_transaction_revenue_external_table
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### 5.9.3 OPTIMIZE
+# MAGIC 
+# MAGIC To improve query speed, Delta Lake on Databricks supports the ability to optimize the layout of data stored in cloud storage. Delta Lake on Databricks supports two layout algorithms: bin-packing and Z-Ordering.
+# MAGIC 
+# MAGIC Readers of Delta tables use snapshot isolation, which means that they are not interrupted when OPTIMIZE removes unnecessary files from the transaction log. OPTIMIZE makes no data related changes to the table, so a read before and after an OPTIMIZE has the same results. Performing OPTIMIZE on a table that is a streaming source does not affect any current or future streams that treat this table as a source. OPTIMIZE returns the file statistics (min, max, total, and so on) for the files removed and the files added by the operation. Optimize stats also contains the Z-Ordering statistics, the number of batches, and partitions optimized.
+
+# COMMAND ----------
+
+# MAGIC %sql describe extended dsai_fact_transaction_revenue_external_table
+
+# COMMAND ----------
+
+# MAGIC %sql OPTIMIZE dsai_fact_transaction_revenue_external_table
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### 5.9.4 Z-Ordering
+# MAGIC 
+# MAGIC Z-Ordering is a technique to colocate related information in the same set of files. This co-locality is automatically used by Delta Lake on Databricks data-skipping algorithms. This behavior dramatically reduces the amount of data that Delta Lake on Databricks needs to read.
+# MAGIC 
+# MAGIC Z-Ordering aims to produce evenly-balanced data files with respect to the number of tuples, but not necessarily data size on disk. The two measures are most often correlated, but there can be situations when that is not the case, leading to skew in optimize task times.
+
+# COMMAND ----------
+
+# MAGIC %sql OPTIMIZE dsai_fact_transaction_revenue_external_table ZORDER BY (customer_type)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### 5.9.5 Clone
+# MAGIC 
+# MAGIC Clones a source Delta table to a target destination at a specific version. A clone can be either deep or shallow: deep clones copy over the data from the source and shallow clones do not.
+# MAGIC 
+# MAGIC If you specify SHALLOW CLONE Databricks will make a copy of the source table’s definition, but refer to the source table’s files. When you specify DEEP CLONE (default) Databricks will make a complete, independent copy of the source table.
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC -- Perform shallow clone
+# MAGIC CREATE OR REPLACE TABLE dsai_external_shallow_clone SHALLOW CLONE dsai_fact_transaction_revenue_external_table;
+
+# COMMAND ----------
+
+# MAGIC %sql describe extended dsai_external_shallow_clone
+
+# COMMAND ----------
+
+# MAGIC %fs ls dbfs:/user/hive/warehouse/dsai_revenue_management.db/dsai_external_shallow_clone
+
+# COMMAND ----------
+
+# MAGIC %fs ls dbfs:/user/hive/warehouse/dsai_revenue_management.db/dsai_fact_transaction_revenue_external_table
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC -- Perform Deep clone
+# MAGIC CREATE OR REPLACE TABLE dsai_external_deep_clone CLONE dsai_fact_transaction_revenue_external_table;
+
+# COMMAND ----------
+
+# MAGIC %fs ls dbfs:/user/hive/warehouse/dsai_revenue_management.db/dsai_external_deep_clone
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### 5.9.6 Cache
+# MAGIC 
+# MAGIC The Delta cache accelerates data reads by creating copies of remote files in nodes’ local storage using a fast intermediate data format. The data is cached automatically whenever a file has to be fetched from a remote location. Successive reads of the same data are then performed locally, which results in significantly improved reading speed.
+# MAGIC 
+# MAGIC The Delta cache works for all Parquet files and is not limited to Delta Lake format files. The Delta cache supports reading Parquet files in Amazon S3, DBFS, HDFS, Azure Blob storage, Azure Data Lake Storage Gen1, and Azure Data Lake Storage Gen2. It does not support other storage formats such as CSV, JSON, and ORC.
+
+# COMMAND ----------
+
+# MAGIC %sql CACHE select * from dsai_fact_transaction_revenue_external_table where customer_type='RARE FLYER'
+
+# COMMAND ----------
+
+# MAGIC %sql select * from dsai_fact_transaction_revenue_external_table where customer_type='RARE FLYER'
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC As you can see in the below screenshot, the cache hit ratio will increase when we try to access the cached data again.
+
+# COMMAND ----------
+
+displayHTML("<img src ='/files/Cache_Statistics.PNG'>")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### 5.9.6 Serverless Compute
+# MAGIC 
+# MAGIC With the Serverless compute version of the Databricks platform architecture, the compute layer exists in the Databricks cloud account rather than the customer’s cloud account.
+# MAGIC 
+# MAGIC As of the current release, Serverless compute is supported for use with Databricks SQL. Admins can create Serverless SQL warehouses (formerly SQL endpoints) that enable instant compute and are managed by Databricks. Serverless SQL warehouses use compute clusters in the Databricks AWS account. Use them with Databricks SQL queries just like you normally would with the original customer-hosted SQL warehouses, which are now called Classic SQL warehouses.
+# MAGIC 
+# MAGIC Databricks changed the name from SQL endpoint to SQL warehouse because, in the industry, endpoint refers to either a remote computing device that communicates with a network that it’s connected to, or an entry point to a cloud service. A data warehouse is a data management system that stores current and historical data from multiple sources in a business friendly manner for easier insights and reporting. SQL warehouse accurately describes the full capabilities of this compute resource.
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC # 6. NextGen Financial Planning - Model Implementation
 
 # COMMAND ----------
 
@@ -661,6 +810,12 @@ class KerasModelImplementationRevenue:
         #Add date,booking,model_accuracy,model_prob
         print("len(test_data)",len(test_data))
         return data_frame
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## 6.1 Weather data from API
+# MAGIC ######       Below is the code to read weather data from open weather map API. Which gives next 5 days weather information at 3 hour time interval. To join this data with our transaction data, we have made few processing steps to update our source_wind column.
 
 # COMMAND ----------
 
