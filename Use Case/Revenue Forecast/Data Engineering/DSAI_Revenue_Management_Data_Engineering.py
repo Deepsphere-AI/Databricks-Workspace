@@ -331,10 +331,10 @@ if __name__=='__main__':
 
 # MAGIC %sql 
 # MAGIC -- select sum(revenue),month,year,subquery.data_category from (
-# MAGIC create table dsai_fact_transaction_revenue_table as
+# MAGIC create or replace table dsai_fact_transaction_revenue_table as
 # MAGIC select rev.id,rev.data_category,data_source,year,source.location_name as source,dest.location_name as destination,
 # MAGIC f.description as flight,price.description as price_type,pro.description as promocode,
-# MAGIC cust.description as customer_type,p.description as product_type,source_wind,destination_wind,source_humidity,destination_humidity,substr(cast(date as string),0,19) as date_time,revenue,cur.description
+# MAGIC cust.description as customer_type,p.description as product_type,source_wind,destination_wind,source_humidity,destination_humidity,to_timestamp(substr(cast(date as string),0,19)) as date_time,revenue,cur.description
 # MAGIC from dsai_fact_transaction_revenue rev
 # MAGIC join dsai_dim_location source on source.location_id=rev.source_id
 # MAGIC join dsai_dim_location dest on dest.location_id=rev.destination_id
@@ -353,17 +353,19 @@ if __name__=='__main__':
 
 # COMMAND ----------
 
-vAR_external_source_df = pd.read_csv('gs://flydubai-airline-data/timeseries-data/FLYDUBAI_DATA_PLAN.csv')
+# vAR_external_source_df = pd.read_csv('gs://flydubai-airline-data/timeseries-data/FLYDUBAI_DATA_PLAN.csv')
+vAR_external_source_df = pd.read_csv('s3://airline-data-bucket/timeseries-data/FLYDUBAI_DATA_PLAN.csv')
+vAR_external_source_df['date_time'] = pd.to_datetime(vAR_external_source_df['date_time'])
 vAR_spark_df = spark.createDataFrame(vAR_external_source_df)
 vAR_spark_df.write.format("delta").mode("overwrite").saveAsTable('dsai_fact_transaction_revenue_external_table')
 
 # COMMAND ----------
 
 # MAGIC %sql 
-# MAGIC create table dsai_fact_revenue_table as
-# MAGIC select * from dsai_fact_transaction_revenue_external_table
+# MAGIC create or replace table dsai_fact_revenue_table as
+# MAGIC select * from dsai_fact_transaction_revenue_external_table where data_category='ACTUAL'
 # MAGIC union all
-# MAGIC select * from dsai_fact_transaction_revenue_table;
+# MAGIC select * from dsai_fact_transaction_revenue_table  where data_category='ACTUAL';
 
 # COMMAND ----------
 
@@ -673,8 +675,8 @@ import boto3
 import json
 
 from keras.models import Sequential
-from keras.layers import Dense,LSTM
-from tensorflow.keras.optimizers import Adam
+from keras.layers import Dense,LSTM,SimpleRNN
+from tensorflow.keras.optimizers import Adam,SGD
 from keras.callbacks import EarlyStopping
 import numpy as np
 
@@ -763,7 +765,11 @@ class KerasModelImplementationRevenue:
         
     def train_model(self,X_train,y_train):
         model = Sequential()
-#         model.add(LSTM(100,input_shape=(7,),return_sequences=True))
+#         model.add(SimpleRNN(50,input_shape=(10,1),return_sequences=False))
+#         model.add(LSTM(128,return_sequences=True))
+#         model.add(LSTM(128,return_sequences=True))
+#         model.add(LSTM(64,return_sequences=True))
+#         model.add(LSTM(100,return_sequences=False))
         model.add(Dense(13, input_shape=(10,), activation = 'relu'))
         
         model.add(Dense(13, activation='relu'))
@@ -773,7 +779,10 @@ class KerasModelImplementationRevenue:
         
         model.add(Dense(1,))
         model.compile(Adam(lr=0.01), 'mean_squared_error',metrics=['accuracy'])
-        history = model.fit(X_train, y_train, epochs = 20, validation_split = 0.1,verbose = 0)
+        model.summary()
+        history = model.fit(X_train, y_train, epochs = 20, validation_split = 0.1,verbose = 1)
+        model.save('/dbfs/tmp/saved_model/')
+        print('Trained model successfully saved in /dbfs/tmp/saved_model/')
         return model
         
     def predict_model(self,model,X_test):
@@ -868,7 +877,7 @@ dataframe_copy = dataframe.copy(deep=True)
 
 # COMMAND ----------
 
-display(dataframe.columns)
+dataframe.columns
 
 # COMMAND ----------
 
@@ -880,11 +889,27 @@ X_train,X_test,y_train,y_test = vAR_revenue_model_obj.train_test_split(df)
 
 # COMMAND ----------
 
+# X_train.shape
+# X_train = np.reshape(X_train,(752,10,1))
+
+# COMMAND ----------
+
 model = vAR_revenue_model_obj.train_model(X_train,y_train)
 
 # COMMAND ----------
 
+# X_test.shape
+# X_test = np.reshape(X_test,(752,10,1))
+
+# COMMAND ----------
+
 y_test_pred = vAR_revenue_model_obj.predict_model(model,X_test)
+
+# COMMAND ----------
+
+# y_test_pred.shape
+# y_test_pred = np.reshape(y_test_pred,(752,10))
+# y_test_pred
 
 # COMMAND ----------
 
@@ -946,11 +971,3 @@ displayHTML("<img src ='/files/delta_lake_medallion_architecture_2.jpg'>")
 # MAGIC * HIVE
 # MAGIC * ZOO KEEPER
 # MAGIC * YARN
-
-# COMMAND ----------
-
-1.delta table in pipeline
-2.Data catalog
-3.https://github.com/Deepsphere-AI/Databricks-Workspace
-4.Live table and delta table difference
-5.Stored procedure

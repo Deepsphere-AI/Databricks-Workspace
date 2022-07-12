@@ -67,7 +67,7 @@
 
 # COMMAND ----------
 
-# MAGIC %fs cp dbfs:/databricks-datasets/iot-stream/data-device/part-00006.json.gz /dbfs/iot-data/
+# MAGIC %fs cp dbfs:/databricks-datasets/iot-stream/data-device/part-00007.json.gz /dbfs/iot-data/
 
 # COMMAND ----------
 
@@ -101,7 +101,7 @@ query = autoload_to_table(data_source = "/dbfs/iot-data",
 
 # COMMAND ----------
 
-# MAGIC %fs cp dbfs:/databricks-datasets/iot-stream/data-device/part-00006.json.gz /dbfs/iot-data/
+# MAGIC %fs cp dbfs:/databricks-datasets/iot-stream/data-device/part-00008.json.gz /dbfs/iot-data/
 
 # COMMAND ----------
 
@@ -112,27 +112,3 @@ query = autoload_to_table(data_source = "/dbfs/iot-data",
 
 # MAGIC %sql
 # MAGIC select count(*) as count,device_id from iot_health_device_data group by device_id order by count desc
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
