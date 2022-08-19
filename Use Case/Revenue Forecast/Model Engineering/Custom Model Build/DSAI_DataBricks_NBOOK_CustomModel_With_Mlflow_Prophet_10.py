@@ -1,7 +1,17 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC ### MLflow Model
-# MAGIC ##### An MLflow Model is a standard format for packaging machine learning models that can be used in a variety of downstream tools—for example, batch inference on Apache Spark or real-time serving through a REST API. The format defines a convention that lets you save a model in different flavors (python-function, pytorch, sklearn, and so on), that can be understood by different model serving and inference platforms.
+# MAGIC 
+# MAGIC 
+# MAGIC ### Copyright (c) DeepSphere.AI 2022
+# MAGIC 
+# MAGIC #### All rights reserved
+# MAGIC 
+# MAGIC ##### We are sharing this notebook for learning and research, and the idea behind us sharing the source code is to 
+# MAGIC ##### stimulate ideas and thoughts for the learners to develop their Databricks knowledge.
+# MAGIC 
+# MAGIC ##### Author: # DeepSphere.AI | deepsphere.ai | dsschoolofai.com | info@deepsphere.ai
+# MAGIC 
+# MAGIC ##### Release: Initial release
 
 # COMMAND ----------
 
@@ -55,7 +65,7 @@ dataframe.head()
 
 # COMMAND ----------
 
-with mlflow.start_run(experiment_id='2152951960190165'):
+with mlflow.start_run():
 
     model = Prophet()
     model.add_regressor('source_wind')
@@ -98,10 +108,6 @@ with mlflow.start_run(experiment_id='2152951960190165'):
 
 # COMMAND ----------
 
-
-
-# COMMAND ----------
-
 # MAGIC %md
 # MAGIC ## 4. Access Deployed Model
 
@@ -129,32 +135,12 @@ dataset = pd.DataFrame([{"ds":"2022-02-26 06:00:00","source_wind":0.87,"destinat
 
 # COMMAND ----------
 
-result = score_model(dataset)
-
-# COMMAND ----------
-
 print(result)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Reference: https://github.com/mlflow/mlflow/blob/master/examples/prophet/train.py
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
+# MAGIC Reference: https://github.com/mlflow/mlflow/blob/master/examples/prophet/train.py
 
 # COMMAND ----------
 

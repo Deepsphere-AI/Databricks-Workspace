@@ -1,4 +1,20 @@
 -- Databricks notebook source
+-- MAGIC %md
+-- MAGIC 
+-- MAGIC 
+-- MAGIC ### Copyright (c) DeepSphere.AI 2022
+-- MAGIC 
+-- MAGIC #### All rights reserved
+-- MAGIC 
+-- MAGIC ##### We are sharing this notebook for learning and research, and the idea behind us sharing the source code is to 
+-- MAGIC ##### stimulate ideas and thoughts for the learners to develop their Databricks knowledge.
+-- MAGIC 
+-- MAGIC ##### Author: # DeepSphere.AI | deepsphere.ai | dsschoolofai.com | info@deepsphere.ai
+-- MAGIC 
+-- MAGIC ##### Release: Initial release
+
+-- COMMAND ----------
+
 Use dsai_revenue_management_pipeline;
 
 -- COMMAND ----------

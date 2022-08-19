@@ -1,5 +1,21 @@
 # Databricks notebook source
 # MAGIC %md
+# MAGIC 
+# MAGIC 
+# MAGIC ### Copyright (c) DeepSphere.AI 2022
+# MAGIC 
+# MAGIC #### All rights reserved
+# MAGIC 
+# MAGIC ##### We are sharing this notebook for learning and research, and the idea behind us sharing the source code is to 
+# MAGIC ##### stimulate ideas and thoughts for the learners to develop their Databricks knowledge.
+# MAGIC 
+# MAGIC ##### Author: # DeepSphere.AI | deepsphere.ai | dsschoolofai.com | info@deepsphere.ai
+# MAGIC 
+# MAGIC ##### Release: Initial release
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC # 1. NextGen Financial Planning - Model Implementation
 
 # COMMAND ----------
@@ -163,8 +179,6 @@ class KerasModelImplementationRevenue:
 # COMMAND ----------
 
 # Here, we are trying to read weather data from open weather map API
-# https://rapidapi.com/community/api/open-weather-map
-# Open weather map api updated on 28th July
 import requests
 def source_wind_from_api():
     querystring = {"q":"Chennai,India"}
@@ -175,7 +189,6 @@ def source_wind_from_api():
     response = requests.request("GET", 'https://community-open-weather-map.p.rapidapi.com/forecast', headers=headers, params=querystring)
 
     data = json.loads(response.text)
-    print(data)
     wind = []
     date = []
     for i in data["list"]:
@@ -201,16 +214,11 @@ def source_wind_from_api():
 
 # COMMAND ----------
 
-# MAGIC %sql
-# MAGIC use dsai_revenue_management;
-
-# COMMAND ----------
-
 vAR_revenue_model_obj = KerasModelImplementationRevenue()
 dataframe = spark.sql(" select * from dsai_fact_revenue_table ").toPandas()
 dataframe.drop_duplicates(keep=False, inplace=True)
-# source_wind = source_wind_from_api()
-# dataframe = vAR_revenue_model_obj.processing_weather_data(dataframe,source_wind)
+source_wind = source_wind_from_api()
+dataframe = vAR_revenue_model_obj.processing_weather_data(dataframe,source_wind)
 dataframe_copy = dataframe.copy(deep=True)
 
 # COMMAND ----------
@@ -247,6 +255,11 @@ display(result)
 
 # COMMAND ----------
 
+# MAGIC %sql 
+# MAGIC Use dsai_revenue_management;
+
+# COMMAND ----------
+
 # Saving Result into a Delta table
 def Result_To_Delta_Table(vAR_dataframe):
     vAR_spark_df = spark.createDataFrame(vAR_dataframe)
@@ -261,3 +274,7 @@ Result_To_Delta_Table(result)
 # COMMAND ----------
 
 # MAGIC %sql select * from DSAI_REVENUE_FORECAST_RESULT
+
+# COMMAND ----------
+
+

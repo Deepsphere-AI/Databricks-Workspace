@@ -1,5 +1,21 @@
 # Databricks notebook source
 # MAGIC %md
+# MAGIC 
+# MAGIC 
+# MAGIC ### Copyright (c) DeepSphere.AI 2022
+# MAGIC 
+# MAGIC #### All rights reserved
+# MAGIC 
+# MAGIC ##### We are sharing this notebook for learning and research, and the idea behind us sharing the source code is to 
+# MAGIC ##### stimulate ideas and thoughts for the learners to develop their Databricks knowledge.
+# MAGIC 
+# MAGIC ##### Author: # DeepSphere.AI | deepsphere.ai | dsschoolofai.com | info@deepsphere.ai
+# MAGIC 
+# MAGIC ##### Release: Initial release
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ### 1. What is a feature store?
 # MAGIC A feature store is a centralized repository that enables data scientists to find and share features and also ensures that the same code used to compute the feature values is used for model training and inference.
 # MAGIC 
@@ -25,7 +41,7 @@
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC drop table dsai_fact_revenue_feature_table
+# MAGIC drop table if exists dsai_fact_revenue_feature_table
 
 # COMMAND ----------
 
@@ -39,35 +55,33 @@ vAR_fs = FeatureStoreClient()
 
 # COMMAND ----------
 
-# MAGIC %python
-# MAGIC 
-# MAGIC from pyspark.sql import SQLContext
-# MAGIC 
-# MAGIC 
-# MAGIC def ReadRevenueFeature():
-# MAGIC     return sqlContext.sql('select id,source_humidity from dsai_revenue_management.dsai_fact_revenue_table')
-# MAGIC 
-# MAGIC def ReadRevenueTable():
-# MAGIC     return sqlContext.sql('select * from dsai_revenue_management.dsai_fact_revenue_table')
-# MAGIC 
-# MAGIC vAR_revenue_df = ReadRevenueFeature()
-# MAGIC 
-# MAGIC 
-# MAGIC 
-# MAGIC vAR_feature_table = vAR_fs.create_table(
-# MAGIC   name='dsai_feature_store.dsai_fact_revenue_feature_table',
-# MAGIC   schema=vAR_revenue_df.schema,
-# MAGIC    primary_keys='id',
-# MAGIC   description='Revenue features'
-# MAGIC )
-# MAGIC 
-# MAGIC 
-# MAGIC vAR_fs.write_table(
-# MAGIC   name='dsai_feature_store.dsai_fact_revenue_feature_table',
-# MAGIC   df = vAR_revenue_df,
-# MAGIC   mode = 'overwrite'
-# MAGIC )
-# MAGIC # Created feature table 'dsai_feature_store.dsai_fact_revenue_view'
+from pyspark.sql import SQLContext
+
+
+def ReadRevenueFeature():
+    return sqlContext.sql('select id,source_humidity from dsai_revenue_management.dsai_fact_revenue_table')
+
+def ReadRevenueTable():
+    return sqlContext.sql('select * from dsai_revenue_management.dsai_fact_revenue_table')
+
+vAR_revenue_df = ReadRevenueFeature()
+
+
+
+vAR_feature_table = vAR_fs.create_table(
+  name='dsai_feature_store.dsai_fact_revenue_feature_table',
+  schema=vAR_revenue_df.schema,
+   primary_keys='id',
+  description='Revenue features'
+)
+
+
+vAR_fs.write_table(
+  name='dsai_feature_store.dsai_fact_revenue_feature_table',
+  df = vAR_revenue_df,
+  mode = 'overwrite'
+)
+
 
 # COMMAND ----------
 
@@ -76,19 +90,18 @@ vAR_fs = FeatureStoreClient()
 
 # COMMAND ----------
 
-# MAGIC %python
-# MAGIC from databricks.feature_store import FeatureLookup
-# MAGIC import mlflow
-# MAGIC 
-# MAGIC revenue_features_table = "dsai_feature_store.dsai_fact_revenue_feature_table"
-# MAGIC 
-# MAGIC revenue_feature_lookups = [
-# MAGIC     FeatureLookup( 
-# MAGIC       table_name = revenue_features_table,
-# MAGIC       feature_name = "source_humidity",
-# MAGIC       lookup_key = ["id"],
-# MAGIC     )
-# MAGIC ]
+from databricks.feature_store import FeatureLookup
+import mlflow
+
+revenue_features_table = "dsai_feature_store.dsai_fact_revenue_feature_table"
+
+revenue_feature_lookups = [
+    FeatureLookup( 
+      table_name = revenue_features_table,
+      feature_name = "source_humidity",
+      lookup_key = ["id"],
+    )
+]
 
 # COMMAND ----------
 
@@ -101,11 +114,9 @@ revenue_feature_lookups
 
 # COMMAND ----------
 
-# MAGIC %python
-# MAGIC revenue_data = ReadRevenueTable()
-# MAGIC revenue_data = revenue_data['id','destination_humidity','revenue']
-# MAGIC # revenue_data = revenue_data.withColumnRenamed("revenue", "y").withColumnRenamed("date_time", "ds")
-# MAGIC display(revenue_data)
+revenue_data = ReadRevenueTable()
+revenue_data = revenue_data['id','destination_humidity','revenue']
+display(revenue_data)
 
 # COMMAND ----------
 
@@ -114,26 +125,25 @@ revenue_feature_lookups
 
 # COMMAND ----------
 
-# MAGIC %python
-# MAGIC # End any existing runs (in the case this notebook is being run for a second time)
-# MAGIC mlflow.end_run()
-# MAGIC 
-# MAGIC # Start an mlflow run, which is needed for the feature store to log the model
-# MAGIC mlflow.start_run() 
-# MAGIC 
-# MAGIC # Since the rounded timestamp columns would likely cause the model to overfit the data 
-# MAGIC # unless additional feature engineering was performed, exclude them to avoid training on them.
-# MAGIC 
-# MAGIC # Create the training set that includes the raw input data merged with corresponding features from both feature tables
-# MAGIC training_set = vAR_fs.create_training_set(
-# MAGIC   revenue_data,
-# MAGIC   feature_lookups = revenue_feature_lookups,
-# MAGIC   label = "revenue",
-# MAGIC     exclude_columns=['id']
-# MAGIC )
-# MAGIC 
-# MAGIC # Load the TrainingSet into a dataframe which can be passed into sklearn for training a model
-# MAGIC training_df = training_set.load_df()
+# End any existing runs (in the case this notebook is being run for a second time)
+# mlflow.end_run()
+
+# Start an mlflow run, which is needed for the feature store to log the model
+# mlflow.start_run() 
+
+# Since the rounded timestamp columns would likely cause the model to overfit the data 
+# unless additional feature engineering was performed, exclude them to avoid training on them.
+
+# Create the training set that includes the raw input data merged with corresponding features from both feature tables
+training_set = vAR_fs.create_training_set(
+  revenue_data,
+  feature_lookups = revenue_feature_lookups,
+  label = "revenue",
+    exclude_columns=['id']
+)
+
+# Load the TrainingSet into a dataframe which can be passed into sklearn for training a model
+training_df = training_set.load_df()
 
 # COMMAND ----------
 
@@ -175,6 +185,7 @@ model = lgb.train(
   param, train_lgb_dataset, num_rounds
 )
 
+
 # COMMAND ----------
 
 # MAGIC %md
@@ -208,7 +219,7 @@ vAR_fs.log_model(
 
 # Get the model URI
 # latest_model_version = get_latest_model_version("revenue_model_feature_store")
-model_uri = f"models:/revenue_model_feature_store/2"
+model_uri = f"models:/revenue_model_feature_store/5"
 
 # Call score_batch to get the predictions from the model
 with_predictions = vAR_fs.score_batch(model_uri, revenue_data)
@@ -237,94 +248,11 @@ display(with_predictions)
 
 # COMMAND ----------
 
-import datetime
-from databricks.feature_store.online_store_spec import AmazonDynamoDBSpec
-# from databricks.feature_store import FeatureStoreClient
-# vAR_fs = FeatureStoreClient()
-
-# do not pass `write_secret_prefix` if you intend to use the instance profile attached to the cluster.
-online_store = AmazonDynamoDBSpec(
-  region='us-west-1',
-#   read_secret_prefix='read_scope/dynamodb'
-#   write_secret_prefix='<write_scope>/<prefix>'
-)
-
-vAR_fs.publish_table(
-  name='dsai_feature_store.dsai_fact_revenue_feature_table',
-  online_store=online_store,
-  mode='merge'
-)
-
-# COMMAND ----------
-
 # MAGIC %md
-# MAGIC Even after publishing data into Amazon Dynamodb, it was throwing the same error message.
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-# MAGIC %md https://docs.databricks.com/applications/machine-learning/feature-store/workflow-overview-and-notebook.html
-
-# COMMAND ----------
-
-# MAGIC %md https://docs.databricks.com/applications/machine-learning/feature-store/online-feature-stores.html
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### Reference Link:
+# MAGIC ### Reference Links:
 # MAGIC https://docs.databricks.com/applications/machine-learning/feature-store/feature-tables.html#register-an-existing-delta-table-as-a-feature-table
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
+# MAGIC https://docs.databricks.com/applications/machine-learning/feature-store/workflow-overview-and-notebook.html
+# MAGIC https://docs.databricks.com/applications/machine-learning/feature-store/online-feature-stores.html
 
 # COMMAND ----------
 

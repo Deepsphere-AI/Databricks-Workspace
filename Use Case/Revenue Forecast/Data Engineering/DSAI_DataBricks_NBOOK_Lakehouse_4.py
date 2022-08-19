@@ -1,5 +1,21 @@
 # Databricks notebook source
 # MAGIC %md
+# MAGIC 
+# MAGIC 
+# MAGIC ### Copyright (c) DeepSphere.AI 2022
+# MAGIC 
+# MAGIC #### All rights reserved
+# MAGIC 
+# MAGIC ##### We are sharing this notebook for learning and research, and the idea behind us sharing the source code is to 
+# MAGIC ##### stimulate ideas and thoughts for the learners to develop their Databricks knowledge.
+# MAGIC 
+# MAGIC ##### Author: # DeepSphere.AI | deepsphere.ai | dsschoolofai.com | info@deepsphere.ai
+# MAGIC 
+# MAGIC ##### Release: Initial release
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ##LakeHouse Overview
 # MAGIC 
 # MAGIC In this section of the tutorial, we begin using [Delta Lake](https://delta.io/). 
@@ -24,7 +40,7 @@
 # MAGIC ## 1.Pre-requisites
 # MAGIC 
 # MAGIC #### &emsp;&emsp;1.Databricks Community Edition
-# MAGIC #### &emsp;&emsp;2.Basic SQL,Cloud,Python,Pyspark,Spark SQL Understanding
+# MAGIC #### &emsp;&emsp;2.Basic SQL,Cloud(GCP),Python,Pyspark,Spark SQL Understanding
 # MAGIC #### &emsp;&emsp;3.Install required libraries in cluster settings
 # MAGIC ####     &emsp;&emsp;&emsp;&emsp;- google-cloud-bigquery,db-dtypes,gcsfs
 # MAGIC #### &emsp;&emsp;4.Copy service account credential file from local->DBFS->Databricks cluster
@@ -34,6 +50,11 @@
 
 # MAGIC %md
 # MAGIC # 2.Problem Statement
+# MAGIC Due to COIVID19, the client wasn&#39;t sure whether to operate a flight or cancel the flight thirty
+# MAGIC days in advance. The client needed to recognize the booking revenue in advance to see if they
+# MAGIC break even in their operating expense when they operate a flight with low booking. In summary,
+# MAGIC the client wanted to optimize their booking and revenue forecast to determine whether to operate
+# MAGIC the flight or cancel it thirty days in advance.
 
 # COMMAND ----------
 
@@ -654,14 +675,6 @@ displayHTML("<img src ='/files/Cache_Statistics.PNG'>")
 # MAGIC As of the current release, Serverless compute is supported for use with Databricks SQL. Admins can create Serverless SQL warehouses (formerly SQL endpoints) that enable instant compute and are managed by Databricks. Serverless SQL warehouses use compute clusters in the Databricks AWS account. Use them with Databricks SQL queries just like you normally would with the original customer-hosted SQL warehouses, which are now called Classic SQL warehouses.
 # MAGIC 
 # MAGIC Databricks changed the name from SQL endpoint to SQL warehouse because, in the industry, endpoint refers to either a remote computing device that communicates with a network that it’s connected to, or an entry point to a cloud service. A data warehouse is a data management system that stores current and historical data from multiple sources in a business friendly manner for easier insights and reporting. SQL warehouse accurately describes the full capabilities of this compute resource.
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
 
 # COMMAND ----------
 
